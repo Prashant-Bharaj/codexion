@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parse_args.c                                        :+:      :+:    :+:  */
+/*   parse_args.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/05 00:00:00 by prasingh          #+#    #+#             */
-/*   Updated: 2025/02/05 00:00:00 by prasingh         ###   ########.fr       */
+/*   Updated: 2026/02/08 11:04:21 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,9 +80,10 @@ int	parse_args(int argc, char **argv, t_params *params)
 {
 	if (argc != 9 || !params)
 		return (-1);
-	if (!is_valid_int(argv[1]) || !is_valid_int(argv[2]) || !is_valid_int(argv[3])
-		|| !is_valid_int(argv[4]) || !is_valid_int(argv[5])
-		|| !is_valid_int(argv[6]) || !is_valid_int(argv[7]))
+	if (!is_valid_int(argv[1]) || !is_valid_int(argv[2])
+		|| !is_valid_int(argv[3]) || !is_valid_int(argv[4])
+		|| !is_valid_int(argv[5]) || !is_valid_int(argv[6])
+		|| !is_valid_int(argv[7]))
 		return (-1);
 	params->num_coders = parse_int(argv[1]);
 	params->time_to_burnout = parse_long(argv[2]);

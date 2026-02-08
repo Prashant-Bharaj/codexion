@@ -6,7 +6,7 @@
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/05 00:00:00 by prasingh          #+#    #+#             */
-/*   Updated: 2025/02/05 00:00:00 by prasingh         ###   ########.fr       */
+/*   Updated: 2026/02/08 11:04:25 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,9 @@
 
 typedef struct s_pq_node
 {
-	int		coder_id;
-	long	priority;
-}	t_pq_node;
+	int			coder_id;
+	long		priority;
+}				t_pq_node;
 
 typedef struct s_priority_queue
 {
@@ -25,7 +25,7 @@ typedef struct s_priority_queue
 	int			capacity;
 	int			size;
 	int			scheduler;
-}	t_priority_queue;
+}				t_priority_queue;
 
 static void	heapify_up(t_priority_queue *pq, int idx)
 {
@@ -36,7 +36,7 @@ static void	heapify_up(t_priority_queue *pq, int idx)
 	{
 		parent = (idx - 1) / 2;
 		if (pq->nodes[idx].priority >= pq->nodes[parent].priority)
-			break;
+			break ;
 		tmp = pq->nodes[idx];
 		pq->nodes[idx] = pq->nodes[parent];
 		pq->nodes[parent] = tmp;
@@ -56,12 +56,14 @@ static void	heapify_down(t_priority_queue *pq, int idx)
 		left = 2 * idx + 1;
 		right = 2 * idx + 2;
 		smallest = idx;
-		if (left < pq->size && pq->nodes[left].priority < pq->nodes[smallest].priority)
+		if (left < pq->size
+			&& pq->nodes[left].priority < pq->nodes[smallest].priority)
 			smallest = left;
-		if (right < pq->size && pq->nodes[right].priority < pq->nodes[smallest].priority)
+		if (right < pq->size
+			&& pq->nodes[right].priority < pq->nodes[smallest].priority)
 			smallest = right;
 		if (smallest == idx)
-			break;
+			break ;
 		tmp = pq->nodes[idx];
 		pq->nodes[idx] = pq->nodes[smallest];
 		pq->nodes[smallest] = tmp;
@@ -93,7 +95,7 @@ void	dongle_request_queue_destroy(void *queue)
 	t_priority_queue	*pq;
 
 	if (!queue)
-		return;
+		return ;
 	pq = (t_priority_queue *)queue;
 	free(pq->nodes);
 	free(pq);
@@ -103,18 +105,17 @@ void	dongle_request_queue_add(void *queue, int coder_id, long priority)
 {
 	t_priority_queue	*pq;
 	t_pq_node			*nodes;
+			int i;
 
 	if (!queue)
-		return;
+		return ;
 	pq = (t_priority_queue *)queue;
 	if (pq->size >= pq->capacity)
 	{
 		nodes = (t_pq_node *)malloc(sizeof(t_pq_node) * pq->capacity * 2);
 		if (!nodes)
-			return;
+			return ;
 		{
-			int	i;
-
 			i = 0;
 			while (i < pq->size)
 			{

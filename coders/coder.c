@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   coder.c                                             :+:      :+:    :+:   */
+/*   coder.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/05 00:00:00 by prasingh          #+#    #+#             */
-/*   Updated: 2025/02/05 00:00:00 by prasingh         ###   ########.fr       */
+/*   Created: 2026/02/08 11:03:13 by prasingh          #+#    #+#             */
+/*   Updated: 2026/02/08 11:03:19 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 static void	update_last_compile(t_coder_data *data, long now)
 {
@@ -33,7 +33,7 @@ static long	get_deadline(t_coder_data *data)
 }
 
 static int	acquire_two_dongles(t_sim *sim, int coder_id, int left_idx,
-	int right_idx)
+		int right_idx)
 {
 	int		first;
 	int		second;
@@ -90,12 +90,12 @@ static void	release_two_dongles(t_sim *sim, int left_idx, int right_idx)
 
 void	*coder_routine(void *arg)
 {
-	t_coder_arg		*carg;
-	t_sim			*sim;
-	int				coder_id;
-	int				left_idx;
-	int				right_idx;
-	long			now;
+	t_coder_arg	*carg;
+	t_sim		*sim;
+	int			coder_id;
+	int			left_idx;
+	int			right_idx;
+	long		now;
 
 	carg = (t_coder_arg *)arg;
 	sim = carg->sim;
@@ -116,8 +116,8 @@ void	*coder_routine(void *arg)
 		safe_log(sim, coder_id, "is refactoring");
 		usleep((useconds_t)sim->params.time_to_refactor * 1000);
 		pthread_mutex_lock(&sim->stop_mutex);
-		if (sim->coder_data[coder_id - 1].compile_count
-			>= sim->params.num_compiles_required)
+		if (sim->coder_data[coder_id
+			- 1].compile_count >= sim->params.num_compiles_required)
 		{
 			sim->num_coders_finished++;
 			if (sim->num_coders_finished >= sim->params.num_coders)

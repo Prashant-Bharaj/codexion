@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                              :+:      :+:    :+:   */
+/*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/05 00:00:00 by prasingh          #+#    #+#             */
-/*   Updated: 2025/02/05 00:00:00 by prasingh         ###   ########.fr       */
+/*   Created: 2026/02/08 11:04:02 by prasingh          #+#    #+#             */
+/*   Updated: 2026/02/08 11:04:09 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,8 @@ static int	init_simulation(t_sim *sim)
 		pthread_mutex_destroy(&sim->log_mutex);
 		return (-1);
 	}
-	sim->dongles = (t_dongle *)malloc(sizeof(t_dongle) * sim->params.num_coders);
+	sim->dongles = (t_dongle *)malloc(sizeof(t_dongle)
+			* sim->params.num_coders);
 	if (!sim->dongles)
 	{
 		pthread_mutex_destroy(&sim->log_mutex);
@@ -41,8 +42,7 @@ static int	init_simulation(t_sim *sim)
 	i = 0;
 	while (i < sim->params.num_coders)
 	{
-		sim->dongles[i].request_queue = dongle_request_queue_create(
-				sim->params.scheduler);
+		sim->dongles[i].request_queue = dongle_request_queue_create(sim->params.scheduler);
 		if (!sim->dongles[i].request_queue)
 		{
 			while (--i >= 0)
@@ -119,7 +119,7 @@ static void	cleanup_simulation(t_sim *sim)
 	int	i;
 
 	if (!sim)
-		return;
+		return ;
 	if (sim->coder_data)
 	{
 		i = 0;
@@ -147,25 +147,28 @@ static void	cleanup_simulation(t_sim *sim)
 
 int	main(int argc, char **argv)
 {
-	t_sim			sim;
-	pthread_t		*coder_threads;
-	pthread_t		monitor_thread;
-	t_coder_arg		*coder_args;
-	int				i;
+	t_sim		sim;
+	pthread_t	*coder_threads;
+	pthread_t	monitor_thread;
+	t_coder_arg	*coder_args;
+	int			i;
 
 	memset(&sim, 0, sizeof(sim));
 	if (parse_args(argc, argv, &sim.params) != 0)
 	{
-		fprintf(stderr, "Usage: %s number_of_coders time_to_burnout "
-			"time_to_compile time_to_debug time_to_refactor "
-			"number_of_compiles_required dongle_cooldown scheduler\n",
-			argv[0]);
+		fprintf(stderr,
+				"Usage: %s number_of_coders time_to_burnout "
+				"time_to_compile time_to_debug time_to_refactor "
+				"number_of_compiles_required dongle_cooldown scheduler\n",
+				argv[0]);
 		return (1);
 	}
 	if (init_simulation(&sim) != 0)
 		return (1);
-	coder_threads = (pthread_t *)malloc(sizeof(pthread_t) * sim.params.num_coders);
-	coder_args = (t_coder_arg *)malloc(sizeof(t_coder_arg) * sim.params.num_coders);
+	coder_threads = (pthread_t *)malloc(sizeof(pthread_t)
+			* sim.params.num_coders);
+	coder_args = (t_coder_arg *)malloc(sizeof(t_coder_arg)
+			* sim.params.num_coders);
 	if (!coder_threads || !coder_args)
 	{
 		cleanup_simulation(&sim);

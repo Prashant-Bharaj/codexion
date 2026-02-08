@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   dongle.c                                            :+:      :+:    :+:   */
+/*   dongle.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/05 00:00:00 by prasingh          #+#    #+#             */
-/*   Updated: 2025/02/05 00:00:00 by prasingh         ###   ########.fr       */
+/*   Created: 2026/02/08 11:03:31 by prasingh          #+#    #+#             */
+/*   Updated: 2026/02/08 11:07:49 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "codexion.h"
 #include <stdlib.h>
 #include <sys/time.h>
+#include "codexion.h"
 
 int	dongle_init(t_dongle *d, void *queue)
 {
@@ -34,7 +34,7 @@ int	dongle_init(t_dongle *d, void *queue)
 void	dongle_destroy(t_dongle *d)
 {
 	if (!d)
-		return;
+		return ;
 	pthread_cond_destroy(&d->cond);
 	pthread_mutex_destroy(&d->mutex);
 }
@@ -90,7 +90,7 @@ int	dongle_acquire(t_dongle *d, t_sim *sim, int coder_id, long deadline)
 			return (0);
 		}
 		if (should_stop(sim))
-			break;
+			break ;
 		wait_ms = 5;
 		if (d->cooldown_until > now)
 		{
@@ -110,7 +110,7 @@ void	dongle_release(t_dongle *d, t_sim *sim)
 	long	now;
 
 	if (!d || !sim)
-		return;
+		return ;
 	pthread_mutex_lock(&d->mutex);
 	d->holder = -1;
 	now = get_time_ms();
@@ -124,7 +124,7 @@ void	signal_stop(t_sim *sim)
 	int	i;
 
 	if (!sim)
-		return;
+		return ;
 	pthread_mutex_lock(&sim->stop_mutex);
 	sim->stop = 1;
 	pthread_mutex_unlock(&sim->stop_mutex);

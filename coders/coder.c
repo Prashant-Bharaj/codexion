@@ -6,7 +6,7 @@
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/08 11:03:13 by prasingh          #+#    #+#             */
-/*   Updated: 2026/02/08 12:12:03 by prasingh         ###   ########.fr       */
+/*   Updated: 2026/02/13 18:54:50 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,19 +25,22 @@ static void	update_last_compile(t_coder_data *data, long now)
 static int	check_done(t_sim *sim, int coder_id)
 {
 	int	done;
+	int	compile_count;
 
 	done = 0;
-	pthread_mutex_lock(&sim->stop_mutex);
-	if (sim->coder_data[coder_id
-			- 1].compile_count >= sim->params.num_compiles_required)
+	pthread_mutex_lock(&sim->coder_data[coder_id - 1].mutex);
+	compile_count = sim->coder_data[coder_id - 1].compile_count;
+	pthread_mutex_unlock(&sim->coder_data[coder_id - 1].mutex);
+	if (compile_count >= sim->params.num_compiles_required)
 	{
+		pthread_mutex_lock(&sim->stop_mutex);
 		sim->num_coders_finished++;
 		if (sim->num_coders_finished >= sim->params.num_coders)
 			done = 2;
 		else
 			done = 1;
+		pthread_mutex_unlock(&sim->stop_mutex);
 	}
-	pthread_mutex_unlock(&sim->stop_mutex);
 	return (done);
 }
 

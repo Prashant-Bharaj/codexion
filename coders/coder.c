@@ -6,7 +6,7 @@
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/08 11:03:13 by prasingh          #+#    #+#             */
-/*   Updated: 2026/02/13 18:54:50 by prasingh         ###   ########.fr       */
+/*   Updated: 2026/02/16 15:50:25 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,8 @@ void	*coder_routine(void *arg)
 	coder_id = ((t_coder_arg *)arg)->coder_id;
 	left_idx = get_left_dongle(coder_id, sim->params.num_coders);
 	right_idx = get_right_dongle(coder_id, sim->params.num_coders);
+	if (coder_id % 2 == 0)
+		usleep(10000);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->stop_mutex);

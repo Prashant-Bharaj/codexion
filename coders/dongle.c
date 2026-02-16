@@ -6,7 +6,7 @@
 /*   By: prasingh <prasingh@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/08 11:03:31 by prasingh          #+#    #+#             */
-/*   Updated: 2026/02/08 11:07:49 by prasingh         ###   ########.fr       */
+/*   Updated: 2026/02/16 15:23:53 by prasingh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,8 +68,7 @@ int	dongle_acquire(t_dongle *d, t_sim *sim, int coder_id, long deadline)
 	else
 	{
 		n = sim->params.num_coders + 1;
-		/* EDF: lower deadline first; tie-break: higher coder_id first */
-		priority = deadline * (long)n + (long)(n - coder_id);
+		priority = deadline;
 	}
 	pthread_mutex_lock(&d->mutex);
 	dongle_request_queue_add(d->request_queue, coder_id, priority);

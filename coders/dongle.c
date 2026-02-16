@@ -59,6 +59,7 @@ int	dongle_acquire(t_dongle *d, t_sim *sim, int coder_id, long deadline)
 {
 	long	priority;
 	int		n;
+	int		acquired;
 
 	if (!d || !sim)
 		return (-1);
@@ -72,13 +73,9 @@ int	dongle_acquire(t_dongle *d, t_sim *sim, int coder_id, long deadline)
 	}
 	pthread_mutex_lock(&d->mutex);
 	dongle_request_queue_add(d->request_queue, coder_id, priority);
+	acquired = acquire_wait_loop(d, sim, coder_id);
 	pthread_mutex_unlock(&d->mutex);
-	pthread_mutex_lock(&d->mutex);
-	if (acquire_wait_loop(d, sim, coder_id) == 0)
-	{
-		pthread_mutex_unlock(&d->mutex);
+	if (acquired == 0)
 		return (0);
-	}
-	pthread_mutex_unlock(&d->mutex);
 	return (-1);
 }

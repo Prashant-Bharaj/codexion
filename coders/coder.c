@@ -67,6 +67,7 @@ void	*coder_routine(void *arg)
 	int		left_idx;
 	int		right_idx;
 	int		done;
+	int		should_stop;
 
 	sim = ((t_coder_arg *)arg)->sim;
 	coder_id = ((t_coder_arg *)arg)->coder_id;
@@ -74,6 +75,11 @@ void	*coder_routine(void *arg)
 	right_idx = get_right_dongle(coder_id, sim->params.num_coders);
 	while (1)
 	{
+		pthread_mutex_lock(&sim->stop_mutex);
+		should_stop = sim->stop;
+		pthread_mutex_unlock(&sim->stop_mutex);
+		if (should_stop)
+			return (NULL);
 		if (do_one_compile(sim, coder_id, left_idx, right_idx) != 0)
 			return (NULL);
 		done = check_done(sim, coder_id);

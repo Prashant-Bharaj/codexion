@@ -17,14 +17,21 @@ static int	check_burnout(t_sim *sim, long now)
 {
 	int		i;
 	long	deadline;
+	int		compile_count;
 
 	i = 0;
 	while (i < sim->params.num_coders)
 	{
 		pthread_mutex_lock(&sim->coder_data[i].mutex);
+		compile_count = sim->coder_data[i].compile_count;
 		deadline = sim->coder_data[i].last_compile_start
 			+ sim->params.time_to_burnout;
 		pthread_mutex_unlock(&sim->coder_data[i].mutex);
+		if (compile_count >= sim->params.num_compiles_required)
+		{
+			i++;
+			continue ;
+		}
 		if (now >= deadline)
 		{
 			pthread_mutex_lock(&sim->stop_mutex);

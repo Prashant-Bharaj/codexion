@@ -33,6 +33,12 @@ make
 - `dongle_cooldown` (ms): Delay before a released dongle can be taken again
 - `scheduler`: `fifo` or `edf`
 
+**Constraints enforced by the program:**
+
+- All times (`time_to_burnout`, `time_to_compile`, `time_to_debug`,
+  `time_to_refactor`, `dongle_cooldown`) must be **≥ 60 ms**.
+- `number_of_compiles_required` must be **≥ 1**.
+
 **Example:**
 
 ```bash
@@ -41,21 +47,48 @@ make
 
 ## Blocking cases handled
 
-- **Deadlock prevention (Coffman's conditions):** Dongles are always acquired in a global order (lower index first). When a coder needs left and right dongles, they acquire `min(left_idx, right_idx)` before `max(left_idx, right_idx)`, ensuring a consistent lock ordering and breaking the circular wait condition.
+- **Deadlock prevention (Coffman's conditions):**
+  - Each coder always requests its two neighbouring dongles as an **atomic pair**:
+    either it acquires both, or neither.
+  - For each pair, dongle mutexes are taken in a fixed global order
+    (`min(left_idx, right_idx)` then `max(left_idx, right_idx)`), which breaks
+    circular wait.
 
-- **Starvation prevention:** Under EDF scheduling, coders are served by earliest burnout deadline (`last_compile_start + time_to_burnout`). A min-heap priority queue orders requests so the coder closest to burnout gets dongles first when they compete.
+- **Starvation prevention (EDF + tie‑breaker):**
+  - Under EDF, each request is prioritized by
+    `deadline = last_compile_start + time_to_burnout`.
+  - A per‑dongle min‑heap priority queue orders requests by
+    `priority = deadline * (num_coders + 1) + (num_coders - coder_id)`,
+    so the coder closest to burnout (and, on ties, lowest ID) gets served first
+    at every dongle.
 
-- **Cooldown handling:** After a dongle is released, `cooldown_until` is set to `now + dongle_cooldown`. Coders waiting on that dongle are woken by `pthread_cond_broadcast` but only proceed when `now >= cooldown_until`, ensuring the cooldown is respected.
+- **Cooldown handling and wake‑up logic:**
+  - When a dongle is released, `cooldown_until` is set to
+    `now + dongle_cooldown`.
+  - Releasing a dongle calls `wake_all_dongles()`, which briefly locks each
+    dongle mutex and broadcasts on its condition variable. Waiting coders wake
+    up and re‑check their pair; they only proceed when both dongles are free
+    and `now >= cooldown_until` for each.
 
-- **Precise burnout detection:** A dedicated monitor thread checks every 1 ms whether any coder has exceeded their burnout deadline. Burnout is detected within 1 ms of the actual time, satisfying the &lt;10 ms requirement.
+- **Precise burnout detection:** A dedicated monitor thread checks approximately
+  every 1 ms whether any coder has exceeded its burnout deadline. Burnout is
+  detected well within the required 10 ms tolerance.
 
-- **Log serialization:** All log output goes through `safe_log()`, which locks a `log_mutex` before `printf`. This prevents two messages from interleaving on a single line.
+- **Log serialization:** All log output goes through `safe_log()`, which locks
+  a `log_mutex` before `printf`. This prevents two messages from interleaving on
+  a single line.
 
 ## Thread synchronization mechanisms
 
 - **`pthread_mutex_t` (per dongle):** Each dongle has a mutex protecting its state (`cooldown_until`, `holder`) and its request queue. Coders lock the dongle mutex when acquiring or releasing.
 
-- **`pthread_cond_t` (per dongle):** Each dongle has a condition variable. Coders wait on it when the dongle is unavailable or they are not at the front of the queue. On release, `pthread_cond_broadcast` wakes all waiters so they can re-check conditions.
+- **`pthread_cond_t` (per dongle):**
+  - Each dongle has a condition variable. Coders waiting for a pair call
+    `pthread_cond_timedwait` on the lower‑indexed dongle’s condvar.
+  - `dongle_release()` and `signal_stop()` call `wake_all_dongles()`, which,
+    while holding each dongle’s mutex, broadcasts on every condvar so all
+    waiters can re‑evaluate whether their pair is now available or the
+    simulation should stop.
 
 - **`pthread_mutex_t` (log_mutex):** Serializes all `printf` calls so log lines are atomic.
 
@@ -63,12 +96,16 @@ make
 
 - **`pthread_mutex_t` (per coder_data):** Protects `last_compile_start` and `compile_count` so the monitor can safely read them while coders update them.
 
-- **Race condition prevention:** The monitor never holds `stop_mutex` while locking `coder_data[i].mutex`, avoiding deadlock. Coders acquire dongles in fixed order to prevent circular wait.
+- **Race condition prevention:** The monitor never holds `stop_mutex` while
+  locking `coder_data[i].mutex`, avoiding deadlock. Coders acquire dongles in
+  a fixed order and only ever take a pair atomically, preventing circular wait
+  and partial‑allocation races.
 
 ## Resources
 
+- AI was used to clarify the subject, and discuss deadlock prevention strategies.
+
 - [POSIX Threads (pthreads) - IEEE Std 1003.1](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html)
-- AI was used to clarify the subject, design the dongle/coder layout, and discuss deadlock prevention strategies. All implementation was written and reviewed by the author.
 - [Mutex and condition variable usage](https://man7.org/linux/man-pages/man3/pthread_mutex_lock.3.html)
 - [Earliest Deadline First scheduling](https://en.wikipedia.org/wiki/Earliest_deadline_first_scheduling)
 - [Coffman conditions (deadlock)](https://en.wikipedia.org/wiki/Deadlock#Necessary_conditions)

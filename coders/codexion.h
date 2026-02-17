@@ -109,11 +109,8 @@ int						get_left_dongle(int coder_id, int num_coders);
 int						get_right_dongle(int coder_id, int num_coders);
 void					order_indices(int left, int right, int *first,
 							int *second);
-<<<<<<< Current (Your changes)
-=======
 void					get_coder_dongles(int coder_id, int num_coders,
 							int *left_idx, int *right_idx);
->>>>>>> Incoming (Background Agent changes)
 
 typedef struct s_pq_node
 {

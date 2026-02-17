@@ -39,8 +39,6 @@ void	order_indices(int left, int right, int *first, int *second)
 		*second = left;
 	}
 }
-<<<<<<< Current (Your changes)
-=======
 
 void	get_coder_dongles(int coder_id, int num_coders,
 			int *left_idx, int *right_idx)
@@ -61,4 +59,3 @@ void	get_coder_dongles(int coder_id, int num_coders,
 		*right_idx = left;
 	}
 }
->>>>>>> Incoming (Background Agent changes)

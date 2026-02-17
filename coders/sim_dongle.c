@@ -44,10 +44,10 @@ void	dongle_release(t_dongle *d, t_sim *sim)
 
 	if (!d || !sim)
 		return ;
-	pthread_mutex_lock(&sim->sched_mutex);
+	pthread_mutex_lock(&d->mutex);
 	d->holder = -1;
 	now = get_time_ms();
 	d->cooldown_until = now + sim->params.dongle_cooldown;
-	pthread_cond_broadcast(&sim->sched_cond);
-	pthread_mutex_unlock(&sim->sched_mutex);
+	pthread_mutex_unlock(&d->mutex);
+	wake_all_dongles(sim);
 }

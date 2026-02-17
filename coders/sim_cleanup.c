@@ -50,10 +50,6 @@ void	cleanup_simulation(t_sim *sim)
 		return ;
 	cleanup_coder_data(sim);
 	cleanup_dongles(sim);
-	if (sim->sched_queue)
-		dongle_request_queue_destroy(sim->sched_queue);
-	pthread_cond_destroy(&sim->sched_cond);
-	pthread_mutex_destroy(&sim->sched_mutex);
 	pthread_mutex_destroy(&sim->stop_mutex);
 	pthread_mutex_destroy(&sim->log_mutex);
 }

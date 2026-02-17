@@ -109,9 +109,9 @@ int	parse_args(int argc, char **argv, t_params *params)
 	params->dongle_cooldown = parse_long(argv[7]);
 	if (params->num_coders < 1)
 		return (-1);
-	if (params->time_to_burnout < 0 || params->time_to_compile < 0
-		|| params->time_to_debug < 0 || params->time_to_refactor < 0
-		|| params->num_compiles_required < 0 || params->dongle_cooldown < 0)
+	if (params->time_to_burnout < 60 || params->time_to_compile < 60
+		|| params->time_to_debug < 60 || params->time_to_refactor < 60
+		|| params->num_compiles_required < 1 || params->dongle_cooldown < 60)
 		return (-1);
 	return (parse_scheduler(argv[8], params));
 }

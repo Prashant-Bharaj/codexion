@@ -73,10 +73,6 @@ static void	cleanup_on_fail(t_sim *sim, int up_to_dongle, int up_to_coder)
 	}
 	if (sim->dongles)
 		free(sim->dongles);
-	if (sim->sched_queue)
-		dongle_request_queue_destroy(sim->sched_queue);
-	pthread_cond_destroy(&sim->sched_cond);
-	pthread_mutex_destroy(&sim->sched_mutex);
 	pthread_mutex_destroy(&sim->stop_mutex);
 	pthread_mutex_destroy(&sim->log_mutex);
 }
@@ -111,17 +107,7 @@ int	init_simulation(t_sim *sim)
 	sim->stop = 0;
 	sim->burnout_coder = 0;
 	sim->num_coders_finished = 0;
-	sim->sched_queue = NULL;
 	if (init_mutexes(sim) != 0)
 		return (-1);
-	sim->sched_queue = dongle_request_queue_create(sim->params.scheduler);
-	if (!sim->sched_queue)
-	{
-		pthread_cond_destroy(&sim->sched_cond);
-		pthread_mutex_destroy(&sim->sched_mutex);
-		pthread_mutex_destroy(&sim->stop_mutex);
-		pthread_mutex_destroy(&sim->log_mutex);
-		return (-1);
-	}
 	return (init_dongles_and_data(sim));
 }

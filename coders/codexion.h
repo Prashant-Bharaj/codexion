@@ -62,19 +62,17 @@ struct					s_sim
 	t_params			params;
 	t_dongle			*dongles;
 	t_coder_data		*coder_data;
-	void				*sched_queue;
 	long				start_time;
 	int					stop;
 	int					burnout_coder;
 	int					num_coders_finished;
 	pthread_mutex_t		log_mutex;
 	pthread_mutex_t		stop_mutex;
-	pthread_mutex_t		sched_mutex;
-	pthread_cond_t		sched_cond;
 };
 
 long					get_time_ms(void);
-long					elapsed_ms(long start);
+int						is_stopped(t_sim *sim);
+void					wake_all_dongles(t_sim *sim);
 void					safe_log(t_sim *sim, int coder_id, const char *msg);
 
 int						parse_args(int argc, char **argv, t_params *params);
@@ -97,9 +95,6 @@ int						dongle_request_queue_peek_can_serve(void *queue,
 							int coder_id);
 
 void					abs_time_in_ms(long ms_from_now, struct timespec *ts);
-long					calc_wait_ms(long cooldown_until, long now);
-int						dongle_acquire(t_dongle *d, t_sim *sim, int coder_id,
-							long deadline);
 void					dongle_release(t_dongle *d, t_sim *sim);
 void					signal_stop(t_sim *sim);
 
@@ -112,6 +107,8 @@ void					*monitor_routine(void *arg);
 
 int						get_left_dongle(int coder_id, int num_coders);
 int						get_right_dongle(int coder_id, int num_coders);
+void					order_indices(int left, int right, int *first,
+							int *second);
 
 typedef struct s_pq_node
 {

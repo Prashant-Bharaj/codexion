@@ -26,17 +26,3 @@ void	abs_time_in_ms(long ms_from_now, struct timespec *ts)
 		ts->tv_nsec -= 1000000000;
 	}
 }
-
-long	calc_wait_ms(long cooldown_until, long now)
-{
-	long	wait_ms;
-
-	wait_ms = 5;
-	if (cooldown_until > now)
-	{
-		wait_ms = cooldown_until - now + 1;
-		if (wait_ms > 100)
-			wait_ms = 100;
-	}
-	return (wait_ms);
-}

@@ -23,19 +23,6 @@ int	init_mutexes(t_sim *sim)
 		pthread_mutex_destroy(&sim->log_mutex);
 		return (-1);
 	}
-	if (pthread_mutex_init(&sim->sched_mutex, NULL) != 0)
-	{
-		pthread_mutex_destroy(&sim->stop_mutex);
-		pthread_mutex_destroy(&sim->log_mutex);
-		return (-1);
-	}
-	if (pthread_cond_init(&sim->sched_cond, NULL) != 0)
-	{
-		pthread_mutex_destroy(&sim->sched_mutex);
-		pthread_mutex_destroy(&sim->stop_mutex);
-		pthread_mutex_destroy(&sim->log_mutex);
-		return (-1);
-	}
 	return (0);
 }
 

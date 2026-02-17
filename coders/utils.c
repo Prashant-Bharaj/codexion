@@ -14,20 +14,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <unistd.h>
 
-void	signal_stop(t_sim *sim)
+void	wake_all_dongles(t_sim *sim)
 {
 	int	i;
 
-	if (!sim)
-		return ;
-	pthread_mutex_lock(&sim->sched_mutex);
-	pthread_mutex_lock(&sim->stop_mutex);
-	sim->stop = 1;
-	pthread_mutex_unlock(&sim->stop_mutex);
-	pthread_cond_broadcast(&sim->sched_cond);
-	pthread_mutex_unlock(&sim->sched_mutex);
 	i = 0;
 	while (i < sim->params.num_coders)
 	{
@@ -38,6 +29,16 @@ void	signal_stop(t_sim *sim)
 	}
 }
 
+void	signal_stop(t_sim *sim)
+{
+	if (!sim)
+		return ;
+	pthread_mutex_lock(&sim->stop_mutex);
+	sim->stop = 1;
+	pthread_mutex_unlock(&sim->stop_mutex);
+	wake_all_dongles(sim);
+}
+
 long	get_time_ms(void)
 {
 	struct timeval	tv;
@@ -46,9 +47,14 @@ long	get_time_ms(void)
 	return ((long)tv.tv_sec * 1000L + (long)tv.tv_usec / 1000L);
 }
 
-long	elapsed_ms(long start)
+int	is_stopped(t_sim *sim)
 {
-	return (get_time_ms() - start);
+	int	s;
+
+	pthread_mutex_lock(&sim->stop_mutex);
+	s = sim->stop;
+	pthread_mutex_unlock(&sim->stop_mutex);
+	return (s);
 }
 
 void	safe_log(t_sim *sim, int coder_id, const char *msg)

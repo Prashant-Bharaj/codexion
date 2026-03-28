@@ -50,37 +50,65 @@ make
 
 ## Test scenarios
 
-Commands below were run successfully against the current two-queue / two-phase
-implementation unless noted.
+Unless noted, commands use **compile / debug / refactor = 200 ms**, **cooldown =
+80 ms**, and **3 compiles required** — the same baseline as the feasibility
+examples and § Mathematical accuracy reference checks.
 
-**Expect exit `0` (all coders complete):**
+### Exit `0` — smoke / success
 
 ```bash
-# 2 coders FIFO — baseline, alternating compiles
+# N=2 FIFO — baseline (alternating compiles)
 ./codexion 2 2000 200 200 200 3 60 fifo
 
-# 3 coders FIFO — sequential round-robin, one compile at a time
+# N=3 FIFO — one compiler at a time; 4 compiles required
 ./codexion 3 1500 200 200 200 4 80 fifo
 
-# 4 coders EDF — coders 1&3 and 2&4 compile in parallel pairs
+# N=4 EDF — parallel pairs; comfortable burnout
 ./codexion 4 1200 200 200 200 4 80 edf
 
-# Cooldown stress test — 500ms cooldown, verifies dongle unavailability
-./codexion 2 2000 200 200 200 3 500 fifo
+# N=4 EDF — tight but feasible (reference: succeeds at ≥ ~1020 ms burnout)
+./codexion 4 1020 200 200 200 3 80 edf
 
-# N=5 EDF — comfortable burnout margin (guaranteed-safe formula)
+# N=5 EDF — comfortable margin (guaranteed-safe style)
 ./codexion 5 1800 200 200 200 3 80 edf
 
-# N=6 EDF — shorter phases, two-queue contention
+# N=5 EDF — tight but feasible (reference: succeeds at ≥ ~850 ms burnout)
+./codexion 5 850 200 200 200 3 80 edf
+
+# Cooldown stress — long cooldown vs compile
+./codexion 2 2000 200 200 200 3 500 fifo
+
+# N=6 EDF — shorter phases, multi-queue contention
 ./codexion 6 2000 100 100 100 3 100 edf
 ```
 
-**Expect non-zero exit (burnout by design):**
+### Non-zero exit — burnout or invalid args
 
 ```bash
-# Burnout trigger — cycle time exceeds burnout; monitor should stop the sim
+# Parse error — times must be ≥ 60 ms
+./codexion 2 50 200 200 200 3 80 fifo
+
+# N=1 — cannot hold two dongles; always burns out
+./codexion 1 500 200 200 200 3 80 fifo
+
+# N=2 — burnout below ~601 ms gap (see Per-N examples)
+./codexion 2 600 200 200 200 3 80 fifo
+
+# N=3 — burnout 800 ms fails (see Per-N examples)
+./codexion 3 800 200 200 200 3 80 fifo
+
+# N=4 EDF — below reference floor (~600 ms)
+./codexion 4 600 200 200 200 3 80 edf
+
+# N=5 EDF — below reference floor (~800 ms)
+./codexion 5 800 200 200 200 3 80 edf
+
+# Burnout stress — many compiles, short burnout window (monitor stops sim)
 ./codexion 3 400 200 200 200 5 80 fifo
 ```
+
+Re-run boundary cases after changing code, scheduler load, or VM; thresholds are
+documented in **§ Mathematical accuracy** and **Per-N examples**.
 
 ## How it works — the complete story
 
@@ -403,8 +431,10 @@ the older single-queue design:
   a proof-level margin; use empirical sweeps when tuning tight burnout.
 
 Reference checks (same 200/200/200 compile, 80ms cooldown, 3 compiles, this
-tree): N=4 EDF fails at `time_to_burnout=1000`, succeeds at `1020`; N=5 EDF
+tree): N=4 EDF fails at `time_to_burnout=600`, succeeds at `1020`; N=5 EDF
 fails at `800`, succeeds at `850` (re-run if you change code or environment).
+Values near the threshold (e.g. N=4 at `605` ms) can be flaky under scheduler
+jitter.
 
 ### Topology constraints
 
@@ -477,8 +507,8 @@ all coders is lower than that wall-clock marker (the monitor uses per-coder
 intervals between **successive** compile starts, not the global round time).
 
 ```bash
-# Infeasible — burnout 1000ms (verified exit ≠ 0 on reference run)
-./codexion 4 1000 200 200 200 3 80 edf
+# Infeasible — burnout 600ms (verified exit ≠ 0)
+./codexion 4 600 200 200 200 3 80 edf
 
 # Feasible — tight (verified exit 0)
 ./codexion 4 1020 200 200 200 3 80 edf
@@ -523,7 +553,7 @@ or code changes).
 | 1 | never | always fails | — | — |
 | 2 | ~601ms | > 601ms | > 880ms | `./codexion 2 900 200 200 200 3 80 fifo` |
 | 3 | ~845ms | > 844ms | > 1160ms | `./codexion 3 1200 200 200 200 3 80 fifo` |
-| 4 | ~1126ms | > ~1000ms (see § Mathematical accuracy) | > 1440ms | `./codexion 4 1500 200 200 200 3 80 edf` |
+| 4 | ~1126ms | > ~605ms (see § Mathematical accuracy) | > 1440ms | `./codexion 4 1500 200 200 200 3 80 edf` |
 | 5 | ~1126ms | > ~800ms (see § Mathematical accuracy) | > 1720ms | `./codexion 5 1800 200 200 200 3 80 edf` |
 
 `C` = compile, `D` = cooldown, `Dbg` = debug, `R` = refactor (all 200ms, cooldown 80ms above).

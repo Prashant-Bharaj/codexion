@@ -94,6 +94,19 @@ time_to_burnout > (5-1) × (200 + 80) + 200 + 200 + 200
 ```
 Verified: `./codexion 5 1800 200 200 200 3 80 edf` completes with no burnout.
 
+### Quick reference — guaranteed no burnout (compile=debug=refactor=200ms, cooldown=80ms)
+
+| N | Guaranteed safe `time_to_burnout` | Verified command |
+|:---:|:---:|:---|
+| 1 | impossible | — |
+| 2 | > 880ms | `./codexion 2 900 200 200 200 3 80 fifo` |
+| 3 | > 1160ms | `./codexion 3 1200 200 200 200 3 80 fifo` |
+| 4 | > 1440ms | `./codexion 4 1500 200 200 200 3 80 edf` |
+| 5 | > 1720ms | `./codexion 5 1800 200 200 200 3 80 edf` |
+
+To scale to your own parameters, apply the formula above. The rule of thumb:
+set `time_to_burnout` to at least `N × time_to_compile + time_to_debug + time_to_refactor + N × dongle_cooldown`.
+
 ### Minimum cycle formula (tighter, topology-dependent)
 
 The actual minimum burnout needed depends on how many coders compile simultaneously:

@@ -90,13 +90,13 @@ int	acquire_two_dongles(t_sim *sim, int cid, int left, int right)
 	int	f;
 	int	s;
 
-	if (sim->params.num_coders < 2)
-		return (-1);
 	order_indices(left, right, &f, &s);
 	pthread_mutex_lock(&sim->dongles[f].mutex);
 	dongle_request_queue_add(sim->dongles[f].request_queue,
 		cid, compute_priority(sim, cid));
 	if (phase1_wait(sim, cid, f) != 0)
 		return (-1);
+	if (f == s)
+		return (take_single(sim, cid, f));
 	return (phase2_take(sim, cid, f, s));
 }

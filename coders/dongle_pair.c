@@ -42,6 +42,30 @@ int	try_take_and_log(t_sim *sim, int cid, int f, int s)
 	return (1);
 }
 
+int	take_single(t_sim *sim, int cid, int f)
+{
+	long			wait_ms;
+	struct timespec	ts;
+
+	while (get_time_ms() < sim->dongles[f].cooldown_until)
+	{
+		if (is_stopped(sim))
+		{
+			pthread_mutex_unlock(&sim->dongles[f].mutex);
+			return (-1);
+		}
+		wait_ms = pair_wait_ms(sim, f, f, get_time_ms());
+		abs_time_in_ms(wait_ms, &ts);
+		pthread_cond_timedwait(&sim->dongles[f].cond,
+			&sim->dongles[f].mutex, &ts);
+	}
+	sim->dongles[f].holder = cid;
+	pthread_mutex_unlock(&sim->dongles[f].mutex);
+	safe_log(sim, cid, "has taken a dongle");
+	safe_log(sim, cid, "has taken a dongle");
+	return (0);
+}
+
 void	release_two_dongles(t_sim *sim, int left_idx, int right_idx)
 {
 	int	first;

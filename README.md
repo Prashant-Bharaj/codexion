@@ -98,39 +98,97 @@ so a coder may wait for up to `ceil(N/2) - 1` others before it gets a turn.
 | 5 | 2 | 2 |
 | N | floor(N/2) | ceil(N/2) - 1 |
 
-### Worked examples
+### Per-N examples (compile=debug=refactor=200ms, cooldown=80ms)
 
-**1 coder:** Hard-coded infeasible. The program requires 2 dongles to compile
-but only 1 exists in a circle of 1. `acquire_two_dongles` returns early and
-the coder always burns out. This is a degenerate edge case acknowledged by the
-subject.
+---
 
-**4 coders, burnout=410ms, compile/debug/refactor=200ms, cooldown=60ms:**
-```
-min_cycle = 200 + 200 + 200 + 1×(200 + 60) = 860ms  >  410ms  → always burns out
-```
+#### N=1 — always infeasible
 
-**5 coders, burnout=850ms, compile=200ms, debug=200ms, refactor=100ms, cooldown=80ms:**
-```
-max_others = ceil(5/2) - 1 = 2
-min_cycle  = 200 + 200 + 100 + 2×(200 + 80) = 1060ms  >  850ms  → always burns out
+Only 1 dongle exists in a circle of 1. The program requires 2 dongles to
+compile and exits the acquire function immediately. The coder always burns out.
+
+```bash
+# Burns out immediately — expected, not a bug
+./codexion 1 500 200 200 200 3 80 fifo
 ```
 
-**3 coders, burnout=1500ms, compile=200ms, debug=200ms, refactor=200ms, cooldown=80ms:**
-```
-max_others = ceil(3/2) - 1 = 1
-min_cycle  = 200 + 200 + 200 + 1×(200 + 80) = 880ms  <  1500ms  → feasible ✓
+---
+
+#### N=2
+
+Empirically, coder 1 gets its second compile at t≈601ms.
+Burnout must be **> 601ms**.
+
+```bash
+# Infeasible — burnout 600ms, coder burns out at deadline
+./codexion 2 600 200 200 200 3 80 fifo
+
+# Feasible — burnout 1000ms, all coders complete
+./codexion 2 1000 200 200 200 3 80 fifo
 ```
 
-**Safe minimum `time_to_burnout` for common setups (compile=debug=refactor=200ms, cooldown=80ms):**
+---
 
-| N | Min safe burnout |
-|:---:|:---:|
-| 2 | > 680ms |
-| 3 | > 880ms |
-| 4 | > 680ms |
-| 5 | > 1060ms |
-| 10 | > 1260ms |
+#### N=3
+
+Only 1 coder compiles at a time (triangle: all share at least one dongle).
+Coder 1 waits for both others before its next turn.
+Empirically, second compile at t≈845ms. Burnout must be **> 844ms**.
+
+```bash
+# Infeasible — burnout 800ms
+./codexion 3 800 200 200 200 3 80 fifo
+
+# Feasible — burnout 1000ms
+./codexion 3 1000 200 200 200 3 80 fifo
+```
+
+---
+
+#### N=4
+
+Pairs (1,3) and (2,4) compile simultaneously. Each coder waits one full
+round for the opposite pair. Empirically, second compile at t≈1126ms.
+Burnout must be **> 1125ms**.
+
+```bash
+# Infeasible — burnout 1100ms
+./codexion 4 1100 200 200 200 3 80 edf
+
+# Feasible — burnout 1200ms
+./codexion 4 1200 200 200 200 3 80 edf
+```
+
+---
+
+#### N=5
+
+Beyond the mathematical constraint, queue-based EDF scheduling creates a
+starvation risk: coder 5 holds its place in dongle 4's queue while blocked
+on dongle 3 (held by coder 4), preventing coder 1 from using dongle 4 even
+when it is physically free. This starvation chain resolves only after coder 5
+compiles. As a result, many burnout values that look mathematically safe still
+fail in practice. Burnout must be **significantly > 1126ms** (empirically ~1300ms).
+
+```bash
+# Infeasible — 950ms fails despite seeming large enough
+./codexion 5 950 200 200 200 3 80 edf
+
+# Feasible — 1500ms provides enough margin
+./codexion 5 1500 200 200 200 3 80 edf
+```
+
+---
+
+#### Summary table (compile=debug=refactor=200ms, cooldown=80ms)
+
+| N | 2nd compile at | Min burnout (empirical) | Safe example |
+|:---:|:---:|:---:|:---|
+| 1 | never | always fails | — |
+| 2 | ~601ms | > 601ms | `./codexion 2 1000 200 200 200 3 80 fifo` |
+| 3 | ~845ms | > 844ms | `./codexion 3 1000 200 200 200 3 80 fifo` |
+| 4 | ~1126ms | > 1125ms | `./codexion 4 1200 200 200 200 3 80 edf` |
+| 5 | ~1126ms | > ~1300ms (queue starvation) | `./codexion 5 1500 200 200 200 3 80 edf` |
 
 ## Blocking cases handled
 

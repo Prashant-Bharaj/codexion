@@ -385,6 +385,27 @@ min_cycle = time_to_compile + time_to_debug + time_to_refactor
 
 `time_to_burnout` must be **strictly greater** than `min_cycle`.
 
+### Mathematical accuracy (formulas vs runs)
+
+You can get **much closer** to the tight, topology-based intuition now than with
+the older single-queue design:
+
+- **What was wrong before:** Head-of-line “ghost” waiters inflated real
+  worst-case gaps beyond what cycle-time math suggested, so empirical safe
+  burnout (e.g. N=5) could sit far above the nominal second-compile spacing.
+- **What holds now:** Separation of **f-queue** and **s-queue** removes that
+  extra starvation; measured minimum burnout on a given machine tracks the
+  **same order of magnitude** as the feasible schedule, not an arbitrary
+  hundred-ms penalty on top.
+- **What will never be exact:** Runs are still non-deterministic (`usleep`,
+  scheduler, VM/WSL). No implementation guarantees **bit-for-bit** equality with
+  a closed form for every OS. Use the **guaranteed safe** formula when you need
+  a proof-level margin; use empirical sweeps when tuning tight burnout.
+
+Reference checks (same 200/200/200 compile, 80ms cooldown, 3 compiles, this
+tree): N=4 EDF fails at `time_to_burnout=1000`, succeeds at `1020`; N=5 EDF
+fails at `800`, succeeds at `850` (re-run if you change code or environment).
+
 ### Topology constraints
 
 Coders sit in a circle and each needs their two neighbouring dongles.
@@ -450,14 +471,19 @@ Empirically, second compile at t≈845ms. Burnout must be **> 844ms**.
 #### N=4
 
 Pairs (1,3) and (2,4) compile simultaneously. Each coder waits one full
-round for the opposite pair. Empirically, second compile at t≈1126ms.
-Burnout must be **> 1125ms**.
+round for the opposite pair. Logs often show a **second compile** for some
+coders around **t≈1126ms**, but the **minimum burnout** that still completes
+all coders is lower than that wall-clock marker (the monitor uses per-coder
+intervals between **successive** compile starts, not the global round time).
 
 ```bash
-# Infeasible — burnout 1100ms
-./codexion 4 1100 200 200 200 3 80 edf
+# Infeasible — burnout 1000ms (verified exit ≠ 0 on reference run)
+./codexion 4 1000 200 200 200 3 80 edf
 
-# Feasible — burnout 1200ms
+# Feasible — tight (verified exit 0)
+./codexion 4 1020 200 200 200 3 80 edf
+
+# Comfortable margin
 ./codexion 4 1200 200 200 200 3 80 edf
 ```
 
@@ -472,13 +498,17 @@ waiting on their other edge, blocking another coder who needed D only as the
 **second** dongle. The current code uses **separate f- and s-queues** and
 **two-phase** acquisition so that does not happen.
 
-Margins are still topology- and jitter-sensitive; the guaranteed-safe formula
-below remains valid. Empirical minimums may sit between the cycle estimate and
-the pessimistic bound — re-measure after parameter changes.
+Margins are still **jitter-sensitive**; the guaranteed-safe formula below
+remains a valid pessimistic bound. After the f/s queue fix, empirical floors are
+much closer to tight schedules than under ghosting (re-measure after parameter
+or code changes).
 
 ```bash
-# Tight — may fail depending on scheduler/OS jitter
-./codexion 5 950 200 200 200 3 80 edf
+# Infeasible — reference run (exit ≠ 0)
+./codexion 5 800 200 200 200 3 80 edf
+
+# Feasible — tight (reference run, exit 0)
+./codexion 5 850 200 200 200 3 80 edf
 
 # Comfortable margin
 ./codexion 5 1500 200 200 200 3 80 edf
@@ -488,13 +518,13 @@ the pessimistic bound — re-measure after parameter changes.
 
 #### Summary table (compile=debug=refactor=200ms, cooldown=80ms)
 
-| N | 2nd compile at | Min burnout (empirical) | Guaranteed safe burnout `(N-1)*(C+D)+C+Dbg+R` | Guaranteed safe example |
+| N | Typical 2nd-compile log (wall) | Min burnout (reference runs, EDF) | Guaranteed safe burnout `(N-1)*(C+D)+C+Dbg+R` | Guaranteed safe example |
 |:---:|:---:|:---:|:---:|:---|
 | 1 | never | always fails | — | — |
 | 2 | ~601ms | > 601ms | > 880ms | `./codexion 2 900 200 200 200 3 80 fifo` |
 | 3 | ~845ms | > 844ms | > 1160ms | `./codexion 3 1200 200 200 200 3 80 fifo` |
-| 4 | ~1126ms | > 1125ms | > 1440ms | `./codexion 4 1500 200 200 200 3 80 edf` |
-| 5 | ~1126ms | > ~1126ms + margin (see jitter) | > 1720ms | `./codexion 5 1800 200 200 200 3 80 edf` |
+| 4 | ~1126ms | > ~1000ms (see § Mathematical accuracy) | > 1440ms | `./codexion 4 1500 200 200 200 3 80 edf` |
+| 5 | ~1126ms | > ~800ms (see § Mathematical accuracy) | > 1720ms | `./codexion 5 1800 200 200 200 3 80 edf` |
 
 `C` = compile, `D` = cooldown, `Dbg` = debug, `R` = refactor (all 200ms, cooldown 80ms above).
 
